@@ -28,7 +28,7 @@ internal class Program {
 			if (raw_genome == Array.Empty<string>())
 				throw new Exception("Genome file was empty");
 		}
-		catch { Console.WriteLine("Failed reading genome file, ensure that it is in the application folder, matches the file name entered into the App.config, and is in tvs {snpID  chromosome  allele}"); throw; }
+		catch { Console.WriteLine("Failed reading genome file; ensure that it is in the application folder, matches the file name entered into the App.config, and is in tvs {snpID  chromosome  allele}"); throw; }
 
 		List<SNP> SNPs = RawGenomeToSNP(raw_genome);
 		MatchSNPstoChromosomes(SNPs);
@@ -106,14 +106,14 @@ internal class Program {
 			Parallel.For(0, chromosomes.Length, chromIndex => {
 				List<string> finishedSplits = new List<string>();
 				if (File.Exists(filePath + $"results\\{chromosomes[chromIndex]}_raw_search_results.xml")) {
-					int count = int.Parse(Regex.Match(File.ReadAllText(filePath + $"results\\{chromosomes[chromIndex]}_raw_search_results.xml"), "<Count>(\\d+)</Count>").Groups[1].Value);
+					int count = int.Parse(Regex.Match(File.ReadAllText(filePath + $"results\\{chromosomes[chromIndex]}\\raw_search_results.xml"), "<Count>(\\d+)</Count>").Groups[1].Value);
 					for (int splitIndex = 0 ; splitIndex < count ; splitIndex += returnMax) {
-						if (!File.Exists(filePath + $"results\\{chromosomes[chromIndex]}_{splitIndex / returnMax}_raw_summarize_results.xml")) {
+						if (!File.Exists(filePath + $"results\\{chromosomes[chromIndex]}\\{splitIndex / returnMax}_raw_summarize_results.xml")) {
 							unfinishedChromosomes.Add(chromIndex);
 							return;
 						}
 						else {
-							finishedSplits.Add(File.ReadAllText(filePath + $"results\\{chromosomes[chromIndex]}_{splitIndex / returnMax}_raw_summarize_results.xml"));
+							finishedSplits.Add(File.ReadAllText(filePath + $"results\\{chromosomes[chromIndex]}\\{splitIndex / returnMax}_raw_summarize_results.xml"));
 						}
 
 					}
@@ -226,7 +226,7 @@ internal class Program {
 
 	#region Get Database
 	private static string[] GetChromosomeData(int ChromID) {
-		Directory.CreateDirectory(filePath + $"\\{chromosomes[ChromID]}");
+		Directory.CreateDirectory(filePath + $"results\\{chromosomes[ChromID]}");
 		Console.Write($"\rGetting Data from e-utils: Assembling URL (Chromosome: {chromosomes[ChromID]})                     ");
 		string baseUrl = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
 		string searchUrl = $"{baseUrl}esearch.fcgi?";
@@ -237,22 +237,22 @@ internal class Program {
 			Console.Write($"\rGetting Data from e-utils: Splitting Filters (Chromosome: {chromosomes[ChromID]})                      ");
 			Console.Write($"\rGetting Data from e-utils: Searching (Chromosome: {chromosomes[ChromID]})                      ");
 			result = AttemptSearchTask(searchUrl + $"db=snp&term=\"chr%20{chromosomes[ChromID]}%20snp\"%5BFilter%5D+AND+\"snp%20clinvar\"%5BFilter%5D&usehistory=y", client);
-			File.Delete(filePath + $"results\\{chromosomes[ChromID]}_raw_seach_results.xml");
-			File.WriteAllText(filePath + $"results\\{chromosomes[ChromID]}_raw_search_results.xml", result);
+			File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\raw_seach_results.xml");
+			File.WriteAllText(filePath + $"results\\{chromosomes[ChromID]}\\raw_search_results.xml", result);
 			string webEnv = Regex.Match(result, "<WebEnv>(\\S+)</WebEnv>").Groups[1].Value;
 			string queryKey = Regex.Match(result, "<QueryKey>(\\d+)</QueryKey>").Groups[1].Value;
 			int count = int.Parse(Regex.Match(result, "<Count>(\\d+)</Count>").Groups[1].Value);
 
 			for (int i = 0 ; i < count ; i += returnMax) {
-				if (File.Exists(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml") && reuseDbFiles) {
-					results.Add(File.ReadAllText(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml"));
+				if (File.Exists(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml") && reuseDbFiles) {
+					results.Add(File.ReadAllText(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml"));
 				}
 				else {
 					esummaryUrl = $"{baseUrl}efetch.fcgi?db=snp&WebEnv={webEnv}&query_key={queryKey}&retstart={i}&retmax={returnMax}&rettype=fasta&retmode=text";
 					result = AttemptSummarizeTask(esummaryUrl, client);
 					results.Add(result);
-					File.Delete(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml");
-					File.WriteAllText(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml", result);
+					File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml");
+					File.WriteAllText(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml", result);
 				}
 			}
 		}
@@ -272,31 +272,31 @@ internal class Program {
 			Console.Write($"\rGetting Data from e-utils: Splitting Filters (Chromosome: {chromosomes[ChromID]})                      ");
 			Console.Write($"\rGetting Data from e-utils: Searching (Chromosome: {chromosomes[ChromID]})                      ");
 			result = AttemptSearchTask(searchUrl + $"db=snp&term=\"chr%20{chromosomes[ChromID]}%20snp\"%5BFilter%5D+AND+\"snp%20clinvar\"%5BFilter%5D&usehistory=y", client);
-			File.Delete(filePath + $"results\\{chromosomes[ChromID]}_comparison_raw_seach_results.xml");
-			File.WriteAllText(filePath + $"results\\{chromosomes[ChromID]}_comparison_raw_search_results.xml", result);
+			File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\comparison_raw_seach_results.xml");
+			File.WriteAllText(filePath + $"results\\{chromosomes[ChromID]}\\comparison_raw_search_results.xml", result);
 			string webEnv = Regex.Match(result, "<WebEnv>(\\S+)</WebEnv>").Groups[1].Value;
 			string queryKey = Regex.Match(result, "<QueryKey>(\\d+)</QueryKey>").Groups[1].Value;
 			int count = int.Parse(Regex.Match(result, "<Count>(\\d+)</Count>").Groups[1].Value);
 
-			if (File.Exists(filePath + $"results\\{chromosomes[ChromID]}_raw_search_results.xml")) {
-				int countComparison = int.Parse(Regex.Match(File.ReadAllText(filePath + $"results\\{chromosomes[ChromID]}_raw_search_results.xml"), "<Count>(\\d+)</Count>").Groups[1].Value);
+			if (File.Exists(filePath + $"results\\{chromosomes[ChromID]}\\raw_search_results.xml")) {
+				int countComparison = int.Parse(Regex.Match(File.ReadAllText(filePath + $"results\\{chromosomes[ChromID]}\\raw_search_results.xml"), "<Count>(\\d+)</Count>").Groups[1].Value);
 				if (countComparison == count) {
 					return false;
 				}
 				else {
-					File.Delete(filePath + $"results\\{chromosomes[ChromID]}_comparison_raw_seach_results.xml");
-					File.Delete(filePath + $"results\\{chromosomes[ChromID]}_comparison_raw_seach_results.xml");
-					for (int i = 0 ; File.Exists(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml") ; i++) {
-						File.Delete(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml");
+					File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\comparison_raw_seach_results.xml");
+					File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\comparison_raw_seach_results.xml");
+					for (int i = 0 ; File.Exists(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml") ; i++) {
+						File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml");
 					}
 					return true;
 				}
 			}
 			else {
-				File.Delete(filePath + $"results\\{chromosomes[ChromID]}_comparison_raw_seach_results.xml");
-				File.Delete(filePath + $"results\\{chromosomes[ChromID]}_comparison_raw_seach_results.xml");
-				for (int i = 0 ; File.Exists(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml") ; i++) {
-					File.Delete(filePath + $"results\\{chromosomes[ChromID]}_{i / returnMax}_raw_summarize_results.xml");
+				File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\comparison_raw_seach_results.xml");
+				File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\comparison_raw_seach_results.xml");
+				for (int i = 0 ; File.Exists(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml") ; i++) {
+					File.Delete(filePath + $"results\\{chromosomes[ChromID]}\\{i / returnMax}_raw_summarize_results.xml");
 				}
 				return true;
 			}
