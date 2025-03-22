@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.3" />
   </ItemGroup>
 
 </Project>
