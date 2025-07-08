@@ -1,6 +1,6 @@
 # Genome
 
-## Read Before Using:
+## Read Before Using
 - I am not responsible for any problems due to misuse of this code.
 - If you make any modifications, ensure you are following the standard for the SNP database API.
 - Please use this code responsibly.
